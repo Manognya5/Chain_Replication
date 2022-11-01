@@ -47,6 +47,7 @@ class myThread (Thread):
         lines = f.readlines()
         for line in lines:
             print(line)
+        f.close()
 
     
 def getData(thread):
