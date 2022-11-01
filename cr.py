@@ -41,9 +41,10 @@ class myThread (Thread):
             f = open(self.logs, "a")
             f.write(str(datetime.now()) + "   Adding node to tail " + str(self.threadID) + "\n")
             f.close()
-    def getlogs(self):
-        f = open(self.logs, "r")
-        print("Logs of Node " + str(self.threadID))
+
+def getlogs(id):
+        f = open("Thread"+str(id)+".txt", "r")
+        print("Logs of Node " + str(id))
         lines = f.readlines()
         for line in lines:
             print(line)
@@ -172,8 +173,9 @@ while True:
         print("Current Leader:", threads[0])
         print("Current reads node", threads[-1])  
     elif a == 5:
-        for i in threads:
-            i.getlogs() 
+        last_id = threads[-1].getthreadID()
+        for i in range(1, last_id+1):
+            getlogs(i) 
     elif a == 6:
         break
 
