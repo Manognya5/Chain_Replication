@@ -11,7 +11,7 @@ class myThread (Thread):
       self.threadID = threadID
       self.name = name
       self.msg = []
-      self.logs = []
+      self.logs = "Thread"+str(threadID)+".txt"
     def printmsg(self):
       print (self.msg)
     def getthreadID(self):
@@ -26,13 +26,21 @@ class myThread (Thread):
       threadLock.release()
     def putlogs(self, code):
         if code == 1:
-            self.logs.append(str(datetime.now()) + "   Putting message in node " + str(self.threadID))
+            f = open(self.logs, "a")
+            f.write(str(datetime.now()) + "   Putting message in node " + str(self.threadID) + "\n")
+            f.close()
         elif code == 2:
-            self.logs.append(str(datetime.now()) + "   Reading message from tail node " + str(self.threadID))
+            f = open(self.logs, "a")
+            f.write(str(datetime.now()) + "   Reading message from tail node " + str(self.threadID) + "\n")
+            f.close()
         elif code == 3:
-            self.logs.append(str(datetime.now()) + "   Removing node " + str(self.threadID))
+            f = open(self.logs, "a")
+            f.write(str(datetime.now()) + "   Removing node " + str(self.threadID) + "\n")
+            f.close()
         elif code == 4:
-            self.logs.append(str(datetime.now()) + "   Adding node to tail " + str(self.threadID))
+            f = open(self.logs, "a")
+            f.write(str(datetime.now()) + "   Adding node to tail " + str(self.threadID) + "\n")
+            f.close()
     def getlogs(self):
         return self.logs
 
@@ -52,12 +60,37 @@ def getData(thread):
 def deleteNode(threads, id):
     #delete node, if the node is first or last, successor is made leader or reads from predecessor resp
     #print current leader and read-only server
-    #2nd msg and 3rd msg
-    for i in threads:
-        if i.getthreadID() == id:
-            i.join()
-            i.putlogs(3)
-            threads.remove(i)
+    for i in range(len(threads)):
+        print("ThreadID: ", threads[i].getthreadID())
+        if threads[i].getthreadID() == id:
+            #if thread is not the tail and chain is consistent
+            print("n1", threads[i].getmsg()[-1])
+            if i < len(threads) - 1 and threads[i].getmsg()[-1] == threads[i+1].getmsg()[-1]:
+                print("n2", threads[i+1].getmsg()[-1])
+                threads[i].join()
+                threads[i].putlogs(3)
+                threads.remove(threads[i])
+                break
+            
+            #if thread is tail - no consistency check is required
+            elif i == len(threads) - 1:
+                threads[i].join()
+                threads[i].putlogs(3)
+                threads.remove(threads[i])
+                break
+
+            #if intermediate node and message wasn't propagated through the chain by the node
+            elif threads[i].getmsg()[-1] != threads[i+1].getmsg()[-1]:
+                print("n2", threads[i+1].getmsg()[-1])
+                j = i+1
+                while j < len(threads) - 1:
+                    threads[j+1].putmsg(threads[i].getmsg()[-1])
+                    threads[j+1].putlogs(1)
+                    j += 1
+                threads[i].join()
+                threads[i].putlogs(3)
+                threads.remove(threads[i])
+                break
     return 1
 
 def addNode(threads, id):
@@ -66,7 +99,12 @@ def addNode(threads, id):
     thread.start()
     threads.append(thread)
     thread.putlogs(4)
-    return 
+    #Update new tail info from previous tail
+    #print(threads[-2].getmsg())
+    for m in threads[-2].getmsg():
+        thread.putmsg(m)
+        thread.putlogs(1)
+    return
 
 def propogateMsg(threads, msg):
     threads[0].putmsg(msg)
@@ -138,5 +176,3 @@ while True:
 for t in threads:
     t.join()
 print ("Exiting Main Thread")
-
-    
